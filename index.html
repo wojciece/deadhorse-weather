@@ -1,0 +1,24 @@
+<h1>DEADHORSE WEATHER</h1>
+
+<p>Temp: loading...</p>
+<p>Feels Like: loading...</p>
+<p>Wind Speed: loading...</p>
+<p>Wind Direction: loading...</p>
+<p>Wind Gusts: loading...</p>
+
+<script>
+fetch("https://api.open-meteo.com/v1/forecast?latitude=70.2006&longitude=-148.4650&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m&temperature_unit=fahrenheit&wind_speed_unit=mph")
+  .then(response => response.json())
+  .then(data => {
+    const w = data.current;
+    document.body.innerHTML = `
+      <h1>DEADHORSE WEATHER</h1>
+      <p>Temp: ${w.temperature_2m} °F</p>
+      <p>Feels Like: ${w.apparent_temperature} °F</p>
+      <p>Wind Speed: ${w.wind_speed_10m} mph</p>
+      <p>Wind Direction: ${w.wind_direction_10m}°</p>
+      <p>Wind Gusts: ${w.wind_gusts_10m} mph</p>
+      <p>Updated: ${w.time}</p>
+    `;
+  });
+</script>
