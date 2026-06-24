@@ -1,112 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Deadhorse Weather</title>
-
 <style>
-body{
-  background:#0b0f14;
-  color:white;
-  font-family:Arial,Helvetica,sans-serif;
-  text-align:center;
-  margin:0;
-  padding:28px 14px;
-}
-
-h1{
-  font-size:44px;
-  margin:10px 0 4px;
-  letter-spacing:2px;
-}
-
-.sub{
-  color:#9aa4af;
-  font-size:18px;
-  margin-bottom:22px;
-}
-
-.card{
-  background:#151c24;
-  border-radius:18px;
-  padding:18px;
-  margin:14px auto;
-  max-width:420px;
-  box-shadow:0 0 18px rgba(0,0,0,.35);
-}
-
-.big{
-  font-size:58px;
-  font-weight:bold;
-}
-
-.label{
-  color:#9aa4af;
-  font-size:18px;
-  margin-top:6px;
-}
-
-.value{
-  font-size:30px;
-  margin:12px 0;
-}
-
-.risk{
-  font-size:28px;
-  font-weight:bold;
-  padding:16px;
-  border-radius:16px;
-  margin-top:12px;
-}
-
-.low{background:#12351f;}
-.med{background:#4a3d10;}
+body{background:#0b0f14;color:white;font-family:Arial;text-align:center;padding:30px 15px;}
+h1{font-size:48px;letter-spacing:3px;}
+.card{background:#151c24;border-radius:18px;padding:18px;margin:14px auto;max-width:420px;}
+.big{font-size:58px;font-weight:bold;}
+.value{font-size:30px;margin:12px 0;}
+.label{color:#9aa4af;font-size:18px;}
+.updated{color:#7f8a96;margin-top:24px;}
 .high{background:#4a1515;}
-
-.updated{
-  margin-top:24px;
-  color:#7f8a96;
-  font-size:16px;
-}
+.med{background:#4a3d10;}
+.low{background:#12351f;}
+.risk{font-size:26px;font-weight:bold;padding:16px;border-radius:16px;margin:14px auto;max-width:420px;}
 </style>
 </head>
-
 <body>
 
 <h1>DEADHORSE</h1>
-<div class="sub" id="dateLine">Loading...</div>
-
 <div id="weather">Loading weather...</div>
 
 <script>
 function windDirection(degrees){
-  const dirs=[
-    "N","NNE","NE","ENE",
-    "E","ESE","SE","SSE",
-    "S","SSW","SW","WSW",
-    "W","WNW","NW","NNW"
-  ];
+  const dirs=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
   return dirs[Math.round(degrees/22.5)%16];
 }
 
-function windArrow(degrees){
-  return `rotate(${degrees}deg)`;
-}
-
 function frostbiteRisk(feelsLike, windSpeed){
-  if(feelsLike <= -40 || windSpeed >= 35){
-    return {text:"HIGH FROSTBITE RISK", cls:"high"};
-  }
-  if(feelsLike <= -20 || windSpeed >= 20){
-    return {text:"MODERATE COLD RISK", cls:"med"};
-  }
+  if(feelsLike <= -40 || windSpeed >= 35) return {text:"HIGH FROSTBITE RISK", cls:"high"};
+  if(feelsLike <= -20 || windSpeed >= 20) return {text:"MODERATE COLD RISK", cls:"med"};
   return {text:"LOW COLD RISK", cls:"low"};
 }
 
-function loadWeather(){
-fetch("https://api.open-meteo.com/v1/forecast?latitude=70.2006&longitude=-148.4650&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=sunrise,sunset&timezone=America%2FAnchorage&temperature_unit=fahrenheit&wind_speed_unit=mph")
-.then(response=>response.json())
-.then(data=>{
-  const w=data.current;
-  const risk=frostbiteRisk(w.apparent_temperature,w.wind_speed
+async function loadWeather(){
+  try{
+    const url="https://api.open-meteo.com/v1/forecast?latitude=70.2006&longitude=-148.4650&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=America%2FAnchorage";
+    const response=await fetch(url);
+    const data=await response.json();
+    const w=data.current;
+    const risk=frostbiteRisk(w.apparent_temperature,w.wind_speed_10m);
+
+    document.getElementById("weather").innerHTML=`
+      <div class="card"><div class="big">${Math.round(w.temperature_2m)}°F</div><div class="label">TEMP</div></div>
+      <div class="card"><div class="big">${Math.round(w.apparent_temperature)}°F</div><div class="label">FEELS LIKE</div></div>
+      <div class="card">
+        <div class="value">💨 ${windDirection(w.wind_direction_10m)} @ ${Math.round(w.wind_speed_10m)} mph</div>
+        <div class="value">Gusts ${Math.round(w.wind_gusts_10m)} mph</div>
+      </div>
+      <div class="risk ${risk.cls}">⚠ ${risk.text}</div>
+      <div class="updated">Updated ${new Date(w.time).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}</div>
+    `;
+  }catch(error){
+    document.getElementById("weather").innerHTML="Weather failed to load. Refresh or check signal.";
+  }
+}
+
+loadWeather();
+setInterval(loadWeather,300000);
+</script>
+
+</body>
+</html>
